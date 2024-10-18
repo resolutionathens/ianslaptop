@@ -89,13 +89,16 @@ setInterval(() => {
 
 <template>
   <div
-    class="bg-gray-900 font-mono h-screen p-4 flex flex-col text-green-600"
+    class="bg-gray-900 font-mono h-screen p-1 sm:p-4 flex flex-col text-green-600"
     ref="terminalRef"
     @click="focusInput"
   >
-    <div class="bg-gray-900 font-mono h-screen p-4 flex flex-col text-green-600" ref="terminalRef">
+    <div
+      class="bg-gray-900 font-mono h-screen p-1 sm:p-4 flex flex-col text-green-600"
+      ref="terminalRef"
+    >
       <!-- Header/ASCII -->
-      <div class="ascii-art mb-4 text-sm" v-html="colorizedAsciiArt"></div>
+      <div class="ascii-art mb-4 text-xs sm:text-sm text-nowrap" v-html="colorizedAsciiArt"></div>
       <!-- Output -->
       <div class="flex-grow overflow-y-auto mb-4">
         <div v-for="(line, index) in lines" :key="index" class="mb-1">
