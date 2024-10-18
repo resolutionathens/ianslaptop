@@ -1,85 +1,134 @@
 <script setup lang="ts">
-import { RouterLink, RouterView } from 'vue-router'
-import HelloWorld from './components/HelloWorld.vue'
+import { ref, onMounted } from 'vue'
+import { useLineAdder } from './composables/useLineAdder'
+import { useCommands } from './composables/useCommands'
+
+const { lines, addLine, clearLines } = useLineAdder()
+const { executeCommand } = useCommands(addLine)
+
+const input = ref('')
+const terminalRef = ref<HTMLElement | null>(null)
+
+const inputRef = ref<HTMLInputElement | null>(null)
+const cursorRef = ref<HTMLDivElement | null>(null)
+const cursorPosition = ref(0)
+
+const currentTime = ref(new Date().toLocaleTimeString())
+
+const focusInput = () => {
+  if (inputRef.value) {
+    inputRef.value.focus()
+  }
+}
+
+const updateCursorPosition = () => {
+  if (inputRef.value) {
+    const inputElement = inputRef.value
+    const textWidth = getTextWidth(inputElement.value, getComputedStyle(inputElement))
+    cursorPosition.value = textWidth
+  }
+}
+
+const getTextWidth = (text: string, font: CSSStyleDeclaration): number => {
+  const canvas = document.createElement('canvas')
+  const context = canvas.getContext('2d')
+  if (context) {
+    context.font = font.font
+    return context.measureText(text).width
+  }
+  return 0
+}
+
+const handleCommand = () => {
+  clearLines()
+  const command = input.value.trim()
+  console.log('handleCommand' + command)
+  input.value = ''
+  executeCommand(command)
+  focusInput()
+  cursorPosition.value = 0
+}
+
+const rainbowColors = [
+  'text-red-500',
+  'text-orange-500',
+  'text-yellow-500',
+  'text-green-500',
+  'text-blue-500',
+  'text-indigo-500',
+  'text-violet-500'
+]
+const ASCII_ART = [
+  '  _                 _             _ ',
+  ' (_) __ _ _ __  ___| | __ _ _ __ | |_ ___  _ __',
+  " | |/ _` | '_ \\/ __| |/ _` | '_ \\| __/ _ \\| '_ \\",
+  ' | | (_| | | | \\__ \\ | (_| | |_) | || (_) | |_) |',
+  ' |_|\\__,_|_| |_|___/_|\\__,_| .__/ \\__\\___/| .__/',
+  '                           |_|            |_|',
+  '',
+  ''
+].map((line) => line.replace(/ /g, '\u00A0'))
+
+const colorizedAsciiArt = ASCII_ART.map((line, index) => {
+  const colorClass = rainbowColors[index % rainbowColors.length]
+  return `<span class="${colorClass}">${line}</span>`
+}).join('<br>')
+
+onMounted(() => {
+  updateCursorPosition()
+  focusInput()
+  if (inputRef.value) {
+    inputRef.value.addEventListener('blur', focusInput)
+  }
+})
+
+setInterval(() => {
+  currentTime.value = new Date().toLocaleTimeString()
+}, 1000)
 </script>
 
 <template>
-  <header>
-    <img alt="Vue logo" class="logo" src="@/assets/logo.svg" width="125" height="125" />
-
-    <div class="wrapper">
-      <HelloWorld msg="You did it!" />
-
-      <nav>
-        <RouterLink to="/">Home</RouterLink>
-        <RouterLink to="/about">About</RouterLink>
-      </nav>
+  <div
+    class="bg-gray-900 font-mono h-screen p-4 flex flex-col text-green-600"
+    ref="terminalRef"
+    @click="focusInput"
+  >
+    <div class="bg-gray-900 font-mono h-screen p-4 flex flex-col text-green-600" ref="terminalRef">
+      <!-- Header/ASCII -->
+      <div class="ascii-art mb-4 text-sm" v-html="colorizedAsciiArt"></div>
+      <!-- Output -->
+      <div class="flex-grow overflow-y-auto mb-4">
+        <div v-for="(line, index) in lines" :key="index" class="mb-1">
+          <span :class="line.color" v-html="line.content as string"></span>
+        </div>
+      </div>
+      <!-- Prompt -->
+      <div class="flex justify-between items-center mb-4" id="prompt">
+        <span class="text-blue-600">~/Documents</span><span class="text-blue-500">/ianslaptop</span>
+        <span class="flex-grow mx-2 flex items-center">
+          <span class="border-t-2 border-dotted border-gray-600 flex-grow"></span>
+        </span>
+        <span class="text-cyan-500"> <span class="mr-1 text-xs">🕒</span>{{ currentTime }} </span>
+      </div>
+      <div class="flex items-center relative">
+        <span class="text-green-400 mr-2">❯</span>
+        <div class="relative flex-grow">
+          <input
+            ref="inputRef"
+            v-model="input"
+            @keyup.enter="handleCommand"
+            @input="updateCursorPosition"
+            class="bg-transparent border-none outline-none w-full caret-transparent"
+            type="text"
+            autofocus
+          />
+          <div
+            ref="cursorRef"
+            class="absolute top-0 w-2 h-5 bg-green-400 animate-cursor-blink pointer-events-none"
+            :style="{ left: cursorPosition + 'px' }"
+          ></div>
+        </div>
+      </div>
     </div>
-  </header>
-
-  <RouterView />
+  </div>
 </template>
-
-<style scoped>
-header {
-  line-height: 1.5;
-  max-height: 100vh;
-}
-
-.logo {
-  display: block;
-  margin: 0 auto 2rem;
-}
-
-nav {
-  width: 100%;
-  font-size: 12px;
-  text-align: center;
-  margin-top: 2rem;
-}
-
-nav a.router-link-exact-active {
-  color: var(--color-text);
-}
-
-nav a.router-link-exact-active:hover {
-  background-color: transparent;
-}
-
-nav a {
-  display: inline-block;
-  padding: 0 1rem;
-  border-left: 1px solid var(--color-border);
-}
-
-nav a:first-of-type {
-  border: 0;
-}
-
-@media (min-width: 1024px) {
-  header {
-    display: flex;
-    place-items: center;
-    padding-right: calc(var(--section-gap) / 2);
-  }
-
-  .logo {
-    margin: 0 2rem 0 0;
-  }
-
-  header .wrapper {
-    display: flex;
-    place-items: flex-start;
-    flex-wrap: wrap;
-  }
-
-  nav {
-    text-align: left;
-    margin-left: -1rem;
-    font-size: 1rem;
-
-    padding: 1rem 0;
-    margin-top: 1rem;
-  }
-}
-</style>
