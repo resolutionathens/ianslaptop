@@ -1,13 +1,16 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, watch } from 'vue'
 import { useLineAdder } from './composables/useLineAdder'
 import { useCommands } from './composables/useCommands'
+import { useSoundEffects } from './composables/useSoundEffects'
 
 const { lines, addLine, clearLines } = useLineAdder()
-const { executeCommand } = useCommands(addLine)
+const { playCommandSound, soundEnabled, toggleSound } = useSoundEffects()
+const { executeCommand } = useCommands(addLine, toggleSound)
 
 const input = ref('')
 const terminalRef = ref<HTMLElement | null>(null)
+const outputRef = ref<HTMLElement | null>(null)
 
 const inputRef = ref<HTMLInputElement | null>(null)
 const cursorRef = ref<HTMLDivElement | null>(null)
@@ -18,6 +21,12 @@ const currentTime = ref(new Date().toLocaleTimeString())
 const focusInput = () => {
   if (inputRef.value) {
     inputRef.value.focus()
+  }
+}
+
+const scrollToBottom = () => {
+  if (outputRef.value) {
+    outputRef.value.scrollTop = outputRef.value.scrollHeight
   }
 }
 
@@ -40,11 +49,24 @@ const getTextWidth = (text: string, font: CSSStyleDeclaration): number => {
 }
 
 const handleCommand = () => {
-  clearLines()
   const command = input.value.trim()
   console.log('handleCommand' + command)
   input.value = ''
-  executeCommand(command)
+  
+  // Play sound effect
+  playCommandSound()
+  
+  const result = executeCommand(command)
+  
+  if (result && result.type === 'clear') {
+    clearLines()
+  }
+  
+  // Use setTimeout to ensure the DOM is updated before scrolling
+  setTimeout(() => {
+    scrollToBottom()
+  }, 0)
+  
   focusInput()
   cursorPosition.value = 0
 }
@@ -77,6 +99,7 @@ const colorizedAsciiArt = ASCII_ART.map((line, index) => {
 onMounted(() => {
   updateCursorPosition()
   focusInput()
+  scrollToBottom()
   if (inputRef.value) {
     inputRef.value.addEventListener('blur', focusInput)
   }
@@ -85,6 +108,16 @@ onMounted(() => {
 setInterval(() => {
   currentTime.value = new Date().toLocaleTimeString()
 }, 1000)
+
+// Watch for changes to lines and scroll to bottom when they change
+watch(
+  () => lines.value.length,
+  () => {
+    setTimeout(() => {
+      scrollToBottom()
+    }, 0)
+  }
+)
 </script>
 
 <template>
@@ -93,14 +126,10 @@ setInterval(() => {
     ref="terminalRef"
     @click="focusInput"
   >
-    <div
-      class="bg-gray-900 font-mono h-screen p-1 sm:p-4 flex flex-col text-green-600"
-      ref="terminalRef"
-    >
       <!-- Header/ASCII -->
       <div class="ascii-art mb-4 text-xs sm:text-sm text-nowrap" v-html="colorizedAsciiArt"></div>
       <!-- Output -->
-      <div class="flex-grow overflow-y-auto mb-4">
+      <div ref="outputRef" class="flex-grow overflow-y-auto mb-4">
         <div v-for="(line, index) in lines" :key="index" class="mb-1">
           <span :class="line.color" v-html="line.content as string"></span>
         </div>
@@ -132,6 +161,5 @@ setInterval(() => {
           ></div>
         </div>
       </div>
-    </div>
   </div>
 </template>
