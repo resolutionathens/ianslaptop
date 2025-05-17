@@ -1,12 +1,17 @@
 <script setup lang="ts">
-import { ref, onMounted, watch } from 'vue'
+import { ref, onMounted, watch, computed } from 'vue'
 import { useLineAdder } from './composables/useLineAdder'
 import { useCommands } from './composables/useCommands'
 import { useSoundEffects } from './composables/useSoundEffects'
+import { useTheme } from './composables/useTheme'
 
 const { lines, addLine, clearLines } = useLineAdder()
 const { playCommandSound, soundEnabled, toggleSound } = useSoundEffects()
-const { executeCommand } = useCommands(addLine, toggleSound)
+const { currentTheme, toggleTheme, initializeTheme, getThemeClasses } = useTheme()
+const { executeCommand } = useCommands(addLine, toggleSound, toggleTheme)
+
+// Computed theme classes
+const themeClasses = computed(() => getThemeClasses())
 
 const input = ref('')
 const terminalRef = ref<HTMLElement | null>(null)
@@ -100,6 +105,7 @@ onMounted(() => {
   updateCursorPosition()
   focusInput()
   scrollToBottom()
+  initializeTheme()
   if (inputRef.value) {
     inputRef.value.addEventListener('blur', focusInput)
   }
@@ -122,7 +128,7 @@ watch(
 
 <template>
   <div
-    class="bg-gray-900 font-mono h-screen p-1 sm:p-4 flex flex-col text-green-600"
+    :class="[themeClasses.background, themeClasses.text, 'font-mono h-screen p-1 sm:p-4 flex flex-col transition-colors duration-300']"
     ref="terminalRef"
     @click="focusInput"
   >
@@ -136,27 +142,27 @@ watch(
       </div>
       <!-- Prompt -->
       <div class="flex justify-between items-center mb-4" id="prompt">
-        <span class="text-blue-600">~/Documents</span><span class="text-blue-500">/ianslaptop</span>
+        <span :class="themeClasses.heading">~/Documents</span><span :class="themeClasses.heading">/ianslaptop</span>
         <span class="flex-grow mx-2 flex items-center">
-          <span class="border-t-2 border-dotted border-gray-600 flex-grow"></span>
+          <span :class="['border-t-2', 'border-dotted', themeClasses.border, 'flex-grow']"></span>
         </span>
-        <span class="text-cyan-500"> <span class="mr-1 text-xs">🕒</span>{{ currentTime }} </span>
+        <span :class="themeClasses.emphasis"> <span class="mr-1 text-xs">🕒</span>{{ currentTime }} </span>
       </div>
       <div class="flex items-center relative">
-        <span class="text-green-400 mr-2">❯</span>
+        <span :class="[themeClasses.prompt, 'mr-2']">❯</span>
         <div class="relative flex-grow">
           <input
             ref="inputRef"
             v-model="input"
             @keyup.enter="handleCommand"
             @input="updateCursorPosition"
-            class="bg-transparent border-none outline-none w-full caret-transparent"
+            :class="['bg-transparent', 'border-none', 'outline-none', 'w-full', 'caret-transparent', themeClasses.text]"
             type="text"
             autofocus
           />
           <div
             ref="cursorRef"
-            class="absolute top-0 w-2 h-5 bg-green-400 animate-cursor-blink pointer-events-none"
+            :class="[themeClasses.cursor, 'absolute', 'top-0', 'w-2', 'h-5', 'animate-cursor-blink', 'pointer-events-none']"
             :style="{ left: cursorPosition + 'px' }"
           ></div>
         </div>

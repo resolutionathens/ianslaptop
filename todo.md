@@ -16,7 +16,10 @@
 
 ## UI/UX
 - Add mobile responsiveness improvements
-- Add dark/light theme toggle
+- ✅ Add dark/light theme toggle
+  - ✅ Light/dark themes with color transition
+  - ✅ Toggle theme with 'theme' command
+  - ✅ Save theme preference in localStorage
 - ✅ Improve scrolling experience in terminal output
 - ✅ Add visual feedback when commands execute
   - ✅ Command echo highlighting

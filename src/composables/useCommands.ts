@@ -6,7 +6,8 @@ interface CommandResult {
 
 export function useCommands(
   addLine: (content: string, color?: string) => void,
-  soundToggler?: () => boolean
+  soundToggler?: () => boolean,
+  themeToggler?: () => string
 ) {
   const commands = {
     help: 'Show help',
@@ -20,7 +21,8 @@ export function useCommands(
     resume: 'Display professional resume',
     social: 'Show social media links',
     blog: 'Visit my blog at fiftymillimeter.com',
-    sound: 'Toggle sound effects on/off'
+    sound: 'Toggle sound effects on/off',
+    theme: 'Toggle light/dark mode'
   }
 
   const executeCommand = (command: string): CommandResult => {
@@ -109,6 +111,18 @@ export function useCommands(
           }
         } else {
           addLine('Sound toggling functionality not available')
+        }
+        break
+      case 'theme':
+        if (themeToggler) {
+          const newTheme = themeToggler()
+          if (newTheme === 'dark') {
+            addLine('<span class="text-purple-500">🌙 Dark mode enabled</span>')
+          } else {
+            addLine('<span class="text-yellow-500">☀️ Light mode enabled</span>')
+          }
+        } else {
+          addLine('Theme toggling functionality not available')
         }
         break
       default:
