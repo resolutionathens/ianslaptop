@@ -6,7 +6,12 @@
   - ✅ `resume`: Display professional resume with downloadable PDF option
   - ✅ `social`: Show social media links with icons
   - ✅ `blog`: Link to blog at fiftymillimeter.com with recent posts preview
-- Implement command history (up/down arrows)
+  - ✅ `history`: Show command history
+  - ✅ `clear-history`: Clear command history
+- ✅ Implement command history (up/down arrows):
+  - ✅ Navigate through previous commands with up/down arrow keys
+  - ✅ Persist command history in localStorage
+  - ✅ Display command history with the 'history' command
 - Add auto-complete functionality for commands
 - ✅ Add ability to clear screen with "clear" command
 

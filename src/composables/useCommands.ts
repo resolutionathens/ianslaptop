@@ -7,7 +7,9 @@ interface CommandResult {
 export function useCommands(
   addLine: (content: string, color?: string) => void,
   soundToggler?: () => boolean,
-  themeToggler?: () => string
+  themeToggler?: () => string,
+  historyProvider?: () => string[],
+  historyClearer?: () => void
 ) {
   const commands = {
     help: 'Show help',
@@ -22,7 +24,9 @@ export function useCommands(
     social: 'Show social media links',
     blog: 'Visit my blog at fiftymillimeter.com',
     sound: 'Toggle sound effects on/off',
-    theme: 'Toggle light/dark mode'
+    theme: 'Toggle light/dark mode',
+    history: 'Show command history',
+    'clear-history': 'Clear command history'
   }
 
   const executeCommand = (command: string): CommandResult => {
@@ -123,6 +127,33 @@ export function useCommands(
           }
         } else {
           addLine('Theme toggling functionality not available')
+        }
+        break
+      case 'history':
+        if (historyProvider) {
+          const commandHistory = historyProvider()
+          if (commandHistory.length === 0) {
+            addLine('<span class="text-gray-500">No command history available</span>')
+          } else {
+            addLine('<span class="font-bold">Command History:</span>')
+            commandHistory.forEach((cmd, index) => {
+              // Show most recent 10 commands
+              if (index < 10) {
+                addLine(`${index + 1}. ${cmd}`)
+              }
+            })
+            addLine('<span class="text-gray-500 text-sm">Use ↑/↓ arrow keys to navigate history</span>')
+          }
+        } else {
+          addLine('Command history functionality not available')
+        }
+        break
+      case 'clear-history':
+        if (historyClearer) {
+          historyClearer()
+          addLine('<span class="text-green-500">✓ Command history cleared</span>')
+        } else {
+          addLine('Command history functionality not available')
         }
         break
       default:

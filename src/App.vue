@@ -4,11 +4,30 @@ import { useLineAdder } from './composables/useLineAdder'
 import { useCommands } from './composables/useCommands'
 import { useSoundEffects } from './composables/useSoundEffects'
 import { useTheme } from './composables/useTheme'
+import { useCommandHistory } from './composables/useCommandHistory'
 
 const { lines, addLine, clearLines } = useLineAdder()
 const { playCommandSound, soundEnabled, toggleSound } = useSoundEffects()
 const { currentTheme, toggleTheme, initializeTheme, getThemeClasses } = useTheme()
-const { executeCommand } = useCommands(addLine, toggleSound, toggleTheme)
+const { 
+  history, 
+  addToHistory, 
+  getPreviousCommand, 
+  getNextCommand, 
+  loadHistory,
+  clearHistory
+} = useCommandHistory()
+
+// Function to provide history to commands
+const getHistory = () => history.value
+
+const { executeCommand } = useCommands(
+  addLine, 
+  toggleSound, 
+  toggleTheme, 
+  getHistory,
+  clearHistory
+)
 
 // Computed theme classes
 const themeClasses = computed(() => getThemeClasses())
@@ -58,6 +77,11 @@ const handleCommand = () => {
   console.log('handleCommand' + command)
   input.value = ''
   
+  if (command) {
+    // Add command to history
+    addToHistory(command)
+  }
+  
   // Play sound effect
   playCommandSound()
   
@@ -101,13 +125,40 @@ const colorizedAsciiArt = ASCII_ART.map((line, index) => {
   return `<span class="${colorClass}">${line}</span>`
 }).join('<br>')
 
+// Handle keyboard navigation
+const handleKeyDown = (event: KeyboardEvent) => {
+  if (event.key === 'ArrowUp') {
+    // Navigate to previous command in history
+    event.preventDefault()
+    input.value = getPreviousCommand()
+    // Move cursor to end of input
+    setTimeout(() => {
+      if (inputRef.value) {
+        updateCursorPosition()
+      }
+    }, 0)
+  } else if (event.key === 'ArrowDown') {
+    // Navigate to next command in history
+    event.preventDefault()
+    input.value = getNextCommand()
+    // Move cursor to end of input
+    setTimeout(() => {
+      if (inputRef.value) {
+        updateCursorPosition()
+      }
+    }, 0)
+  }
+}
+
 onMounted(() => {
   updateCursorPosition()
   focusInput()
   scrollToBottom()
   initializeTheme()
+  loadHistory() // Load command history from localStorage
   if (inputRef.value) {
     inputRef.value.addEventListener('blur', focusInput)
+    inputRef.value.addEventListener('keydown', handleKeyDown)
   }
 })
 
